@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-AI Grounding Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #0a4d3c;
+            --primary-light: #0d6b4f;
+            --accent: #f59e0b;
+            --accent-dark: #d97706;
+            --bg: #fafaf9;
+            --surface: #ffffff;
+            --text: #1c1917;
+            --text-muted: #78716c;
+            --border: #e7e5e4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-family: 'Fraunces', serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 
+                0 1px 3px rgba(0, 0, 0, 0.05),
+                0 10px 40px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-icon {
+            font-size: 1.8rem;
+        }
+
+        .card-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .section {
+            margin-bottom: 1.75rem;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            font-style: italic;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: var(--bg);
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 0 0 4px rgba(10, 77, 60, 0.1);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .char-count {
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #93c5fd;
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: #1e3a8a;
+        }
+
+        .info-box h3 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box ul {
+            margin-left: 1.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .info-box li {
+            margin-bottom: 0.5rem;
+        }
+
+        .results-section {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rubric-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .rubric-item {
+            background: var(--bg);
+            padding: 1.25rem;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+        }
+
+        .rubric-item h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .rubric-score {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .score-badge {
+            font-family: 'Fraunces', serif;
+            font-size: 1.75rem;
+            font-weight: 900;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .score-badge.excellent {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .score-badge.good {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .score-badge.developing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .rubric-feedback {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .comparison-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid;
+        }
+
+        .comparison-card.without {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .comparison-card.with {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .comparison-card h4 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .comparison-card.without h4 {
+            color: #991b1b;
+        }
+
+        .comparison-card.with h4 {
+            color: #15803d;
+        }
+
+        .prompt-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+
+        .comparison-card.without .prompt-box {
+            border-color: #dc2626;
+        }
+
+        .comparison-card.with .prompt-box {
+            border-color: #16a34a;
+        }
+
+        .outcome-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .outcome-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.75rem;
+            position: relative;
+            font-size: 0.9rem;
+        }
+
+        .outcome-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.85rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+        }
+
+        .comparison-card.without .outcome-list li::before {
+            background: #fca5a5;
+            content: '✗';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #991b1b;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .comparison-card.with .outcome-list li::before {
+            background: #86efac;
+            content: '✓';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #15803d;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .prompt-tips {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .prompt-tips h4 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            color: #92400e;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tip-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .tip-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .tip-item strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: #92400e;
+        }
+
+        .btn-secondary {
+            background: var(--primary);
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(10, 77, 60, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .comparison-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="hero-content">
+            <div class="hero-icon">🧠</div>
+            <h1>Pre-AI Grounding Tool</h1>
+            <p class="hero-subtitle">Build context, think metacognitively, and prepare for meaningful AI interaction</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📝</span>
+                    <h2 class="card-title">Your Grounding</h2>
+                </div>
+
+                <div class="section">
+                    <label for="topic">What topic are you about to explore?</label>
+                    <p class="helper-text">Be specific - this helps frame your learning context</p>
+                    <input type="text" id="topic" placeholder="e.g., Photosynthesis, The Water Cycle, Fractions">
+                </div>
+
+                <div class="section">
+                    <label for="know">K - What do you KNOW?</label>
+                    <p class="helper-text">Your existing knowledge, experiences, connections</p>
+                    <textarea id="know" placeholder="List what you already understand about this topic. Be specific - include facts, concepts, or experiences you already have."></textarea>
+                    <div class="char-count"><span id="know-count">0</span> characters</div>
+                </div>
+
+                <div class="section">
+                    <label for="confidence">How confident are you in what you know?</label>
+                    <p class="helper-text">Rate your certainty about the knowledge above</p>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                            <input type="radio" name="confidence" value="1" style="margin: 0;">
+                            <span>1 - Guessing</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                            <input type="radio" name="confidence" value="2" style="margin: 0;">
+                            <span>2 - Somewhat sure</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                            <input type="radio" name="confidence" value="3" style="margin: 0;">
+                            <span>3 - Pretty confident</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                            <input type="radio" name="confidence" value="4" style="margin: 0;">
+                            <span>4 - Very confident</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                            <input type="radio" name="confidence" value="5" style="margin: 0;">
+                            <span>5 - Certain</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <label for="source">Where did you learn this?</label>
+                    <p class="helper-text">Source of your knowledge (helps you evaluate reliability)</p>
+                    <input type="text" id="source" placeholder="e.g., class notes, textbook chapter 5, a video I watched, my own experience">
+                </div>
+
+                <div class="section">
+                    <label for="wonder">W - What do you WONDER?</label>
+                    <p class="helper-text">Your genuine questions, confusions, curiosities</p>
+                    <textarea id="wonder" placeholder="What questions do you have? What are you confused about? What do you want to know more about?"></textarea>
+                    <div class="char-count"><span id="wonder-count">0</span> characters</div>
+                </div>
+
+                <div class="section">
+                    <label for="learn">L - LEARNING Success Criteria</label>
+                    <p class="helper-text">How will you know you've actually learned this? What will you look for in AI responses to verify they're accurate and complete?</p>
+                    <textarea id="learn" placeholder="I'll know I've learned this when I can... I'll verify AI responses by checking if... I should be able to... If the AI contradicts [my source], I'll..."></textarea>
+                    <div class="char-count"><span id="learn-count">0</span> characters</div>
+                </div>
+
+                <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeGrounding()">
+                    🎯 Analyze My Grounding
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="info-box">
+                <h3>💡 Why Pre-AI Grounding Matters</h3>
+                <p>Before you interact with AI, it's crucial to establish YOUR context, thinking, and evaluation criteria. This helps you:</p>
+                <ul>
+                    <li><strong>Evaluate AI outputs critically</strong> - You'll know what to check and verify</li>
+                    <li><strong>Ask better questions</strong> - Your prompts become specific and targeted</li>
+                    <li><strong>Learn meaningfully</strong> - AI enhances your understanding rather than replacing it</li>
+                    <li><strong>Set success criteria</strong> - You'll know when you've actually learned, not just consumed information</li>
+                    <li><strong>Avoid passive consumption</strong> - You remain an active, critical thinker</li>
+                </ul>
+            </div>
+
+            <div id="resultsContainer">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>Complete your grounding on the left to see your analysis</h3>
+                    <p>Fill out all three sections (K-W-L) and click "Analyze My Grounding"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Character counters
+        ['know', 'wonder', 'learn'].forEach(field => {
+            document.getElementById(field).addEventListener('input', function() {
+                document.getElementById(field + '-count').textContent = this.value.length;
+            });
+        });
+
+        function analyzeGrounding() {
+            const topic = document.getElementById('topic').value.trim();
+            const know = document.getElementById('know').value.trim();
+            const wonder = document.getElementById('wonder').value.trim();
+            const learn = document.getElementById('learn').value.trim();
+            const confidence = document.querySelector('input[name="confidence"]:checked');
+            const source = document.getElementById('source').value.trim();
+
+            if (!topic || !know || !wonder || !learn || !confidence || !source) {
+                alert('Please complete all sections (including confidence rating and source) before analyzing your grounding.');
+                return;
+            }
+
+            const confidenceValue = parseInt(confidence.value);
+            const analysis = evaluateGrounding(topic, know, wonder, learn, confidenceValue, source);
+            displayResults(analysis);
+        }
+
+        function evaluateGrounding(topic, know, wonder, learn, confidence, source) {
+            const scores = {
+                specificity: evaluateSpecificity(know, wonder, learn),
+                depth: evaluateDepth(know, wonder),
+                questionQuality: evaluateQuestions(wonder),
+                goalClarity: evaluateGoals(learn),
+                selfAwareness: evaluateSelfAwareness(know, wonder, confidence, source)
+            };
+
+            const enhancedPrompt = generateEnhancedPrompt(topic, know, wonder, learn);
+            const basicPrompt = `Tell me about ${topic}`;
+
+            return {
+                topic,
+                know,
+                wonder,
+                learn,
+                confidence,
+                source,
+                scores,
+                basicPrompt,
+                enhancedPrompt
+            };
+        }
+
+        function evaluateSpecificity(know, wonder, learn) {
+            const text = know + wonder + learn;
+            const vagueTerms = ['some', 'a little', 'kind of', 'maybe', 'sort of', 'basically', 'stuff', 'things'];
+            const specificIndicators = text.match(/\d+|specifically|exactly|particular|precise/gi) || [];
+            const vagueCount = vagueTerms.filter(term => text.toLowerCase().includes(term)).length;
+            
+            const hasExamples = text.includes('for example') || text.includes('such as') || text.includes('like');
+            const wordCount = text.split(/\s+/).length;
+
+            if (wordCount < 50 || vagueCount > 3) {
+                return {
+                    score: 2,
+                    label: 'Developing',
+                    feedback: 'Your responses could be more specific. Add concrete examples, numbers, or precise details rather than vague generalizations.'
+                };
+            } else if (specificIndicators.length >= 3 && hasExamples) {
+                return {
+                    score: 4,
+                    label: 'Excellent',
+                    feedback: 'Excellent specificity! You provided concrete details and examples that create clear context.'
+                };
+            } else {
+                return {
+                    score: 3,
+                    label: 'Good',
+                    feedback: 'Good level of detail. Consider adding more specific examples or measurements to strengthen your context.'
+                };
+            }
+        }
+
+        function evaluateDepth(know, wonder) {
+            const combined = know + wonder;
+            const depthIndicators = [
+                'how', 'why', 'what causes', 'relationship between', 'compare', 'contrast',
+                'impact', 'affect', 'consequence', 'tradeoff', 'balance'
+            ];
+            
+            const surfaceIndicators = ['what is', 'define', 'list', 'name'];
+            const depthCount = depthIndicators.filter(term => combined.toLowerCase().includes(term)).length;
+            const surfaceCount = surfaceIndicators.filter(term => combined.toLowerCase().includes(term)).length;
+
+            if (depthCount >= 3 && surfaceCount < 2) {
+                return {
+                    score: 4,
+                    label: 'Excellent',
+                    feedback: 'You\'re thinking deeply! Your questions explore relationships, causes, and nuances rather than just surface facts.'
+                };
+            } else if (depthCount >= 1) {
+                return {
+                    score: 3,
+                    label: 'Good',
+                    feedback: 'Good conceptual thinking. Try pushing further into "why" and "how" questions to explore deeper connections.'
+                };
+            } else {
+                return {
+                    score: 2,
+                    label: 'Developing',
+                    feedback: 'Focus on moving beyond definitions. Ask about relationships, causes, and implications rather than just facts.'
+                };
+            }
+        }
+
+        function evaluateQuestions(wonder) {
+            const questions = wonder.split('?').filter(q => q.trim().length > 0);
+            const hasSpecificConfusion = wonder.toLowerCase().includes('confused') || 
+                                        wonder.toLowerCase().includes('unclear') ||
+                                        wonder.toLowerCase().includes('understand');
+            
+            if (questions.length === 0) {
+                return {
+                    score: 1,
+                    label: 'Developing',
+                    feedback: 'Try formulating actual questions with question marks. Genuine inquiry drives meaningful AI interaction.'
+                };
+            } else if (questions.length >= 3 && hasSpecificConfusion) {
+                return {
+                    score: 4,
+                    label: 'Excellent',
+                    feedback: 'Excellent question formulation! You\'ve identified multiple specific points of confusion or curiosity.'
+                };
+            } else {
+                return {
+                    score: 3,
+                    label: 'Good',
+                    feedback: 'You\'ve posed questions, which is great. Try articulating exactly what confuses you or where your knowledge gaps are.'
+                };
+            }
+        }
+
+        function evaluateGoals(learn) {
+            // Look for success criteria indicators
+            const successIndicators = [
+                'i\'ll know', 'i will know', 'when i can', 'i should be able to',
+                'i can', 'success looks like', 'i\'ll be able to'
+            ];
+            
+            // Look for verification/evaluation strategies
+            const verificationIndicators = [
+                'verify', 'check', 'compare', 'if the ai', 'contradict',
+                'source', 'look for', 'make sure', 'confirm', 'validate'
+            ];
+            
+            const lowerLearn = learn.toLowerCase();
+            const hasSuccessCriteria = successIndicators.some(indicator => lowerLearn.includes(indicator));
+            const hasVerification = verificationIndicators.some(indicator => lowerLearn.includes(indicator));
+            
+            // Look for measurable/demonstrable outcomes
+            const demonstrableVerbs = [
+                'explain', 'describe', 'identify', 'compare', 'draw', 'create',
+                'solve', 'apply', 'analyze', 'list', 'demonstrate', 'show'
+            ];
+            const hasDemonstrableAction = demonstrableVerbs.some(verb => lowerLearn.includes(verb));
+            
+            // Check for specificity
+            const hasSpecifics = lowerLearn.includes('if') || 
+                                lowerLearn.includes('by') ||
+                                learn.split(/[.!?]/).length > 2; // Multiple criteria listed
+
+            if (hasSuccessCriteria && hasVerification && hasDemonstrableAction) {
+                return {
+                    score: 4,
+                    label: 'Excellent',
+                    feedback: 'Outstanding! You\'ve defined both what successful learning looks like AND how you\'ll verify AI responses. This dual framework will help you learn actively and evaluate critically.'
+                };
+            } else if ((hasSuccessCriteria || hasDemonstrableAction) && hasVerification) {
+                return {
+                    score: 3,
+                    label: 'Good',
+                    feedback: 'Good thinking! You\'re considering how to evaluate learning. Try adding more specific success criteria - what exactly will you be able to DO or CREATE to prove you learned?'
+                };
+            } else if (hasSuccessCriteria || hasDemonstrableAction) {
+                return {
+                    score: 3,
+                    label: 'Good',
+                    feedback: 'You\'ve identified learning outcomes, which is great! Now add: How will you verify if the AI\'s response is accurate? What will you check or compare against?'
+                };
+            } else if (hasVerification) {
+                return {
+                    score: 2,
+                    label: 'Developing',
+                    feedback: 'You\'re thinking about verification, which is important! Now add clear success criteria: What will you be able to DO when you\'ve learned this? Be specific and measurable.'
+                };
+            } else {
+                return {
+                    score: 2,
+                    label: 'Developing',
+                    feedback: 'Make your criteria more specific. What will you be able to DO or CREATE? How will you know the AI gave you accurate information? What will you check it against?'
+                };
+            }
+        }
+
+        function evaluateSelfAwareness(know, wonder, confidence, source) {
+            const awareness = [
+                'i don\'t know', 'unclear', 'confused', 'wondering', 'not sure',
+                'gap in my understanding', 'missing', 'need to learn', 'i think'
+            ];
+            
+            const awarenessCount = awareness.filter(term => 
+                (know + wonder).toLowerCase().includes(term)
+            ).length;
+
+            // Evaluate confidence calibration
+            const knowledgeLength = know.split(/\s+/).length;
+            const isVague = know.toLowerCase().includes('some') || 
+                           know.toLowerCase().includes('a little') ||
+                           know.toLowerCase().includes('kind of');
+            
+            // High confidence + vague knowledge = potential overconfidence
+            const possibleOverconfidence = confidence >= 4 && (knowledgeLength < 30 || isVague);
+            
+            // Low confidence + detailed knowledge = good calibration
+            const goodCalibration = confidence <= 3 && knowledgeLength > 50;
+            
+            // Source quality
+            const hasSpecificSource = source.toLowerCase().includes('chapter') ||
+                                     source.toLowerCase().includes('page') ||
+                                     source.toLowerCase().includes('lecture') ||
+                                     source.toLowerCase().includes('experiment') ||
+                                     source.toLowerCase().includes('article');
+
+            // Combined evaluation
+            if (goodCalibration && hasSpecificSource && awarenessCount >= 2) {
+                return {
+                    score: 4,
+                    label: 'Excellent',
+                    feedback: 'Excellent metacognitive awareness! You clearly recognize what you know and don\'t know, your confidence matches your detail level, and you\'ve identified specific sources. This critical thinking will help you evaluate AI responses.'
+                };
+            } else if (possibleOverconfidence) {
+                return {
+                    score: 2,
+                    label: 'Developing',
+                    feedback: 'Your confidence level seems high relative to the detail you provided. This is okay! But be extra careful when evaluating AI responses - verify information from multiple sources when you\'re very confident but haven\'t provided much detail.'
+                };
+            } else if (awarenessCount >= 1 || confidence <= 3) {
+                return {
+                    score: 3,
+                    label: 'Good',
+                    feedback: 'Good awareness of your knowledge boundaries. Your confidence rating and knowledge gaps show you\'re thinking critically. Keep being explicit about what you\'re uncertain about - this helps you ask better questions.'
+                };
+            } else {
+                return {
+                    score: 2,
+                    label: 'Developing',
+                    feedback: 'Try being more explicit about your knowledge boundaries and uncertainty. Rating your confidence and identifying sources helps you think about how reliable your current understanding is.'
+                };
+            }
+        }
+
+        function generateEnhancedPrompt(topic, know, wonder, learn) {
+            // Extract key elements
+            const knowledgeBase = know.split(/[.!?]/)[0].trim();
+            const primaryQuestion = wonder.split('?')[0].trim();
+            const learningGoal = learn.split(/[.!?]/)[0].trim();
+
+            return `I'm learning about ${topic}. I understand that ${knowledgeBase.toLowerCase()}, but I'm confused about ${primaryQuestion.toLowerCase()}. I want to ${learningGoal.toLowerCase()}. Can you help me understand the relationship between these concepts and address my specific confusion?`;
+        }
+
+        function displayResults(analysis) {
+            const container = document.getElementById('resultsContainer');
+            
+            const confidenceLabels = {
+                1: 'Guessing',
+                2: 'Somewhat sure',
+                3: 'Pretty confident',
+                4: 'Very confident',
+                5: 'Certain'
+            };
+            
+            const html = `
+                <div class="results-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">📊</span>
+                            <h2 class="card-title">Your Grounding Analysis</h2>
+                        </div>
+
+                        <div style="background: var(--bg); padding: 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; border: 2px solid var(--border);">
+                            <p style="margin-bottom: 0.5rem;"><strong>Confidence Level:</strong> ${analysis.confidence}/5 - ${confidenceLabels[analysis.confidence]}</p>
+                            <p style="margin-bottom: 0.5rem;"><strong>Knowledge Source:</strong> ${analysis.source}</p>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; margin-top: 0.75rem;">💡 Remember: High confidence doesn't always mean accurate knowledge. Use AI interaction to verify and deepen understanding, especially when your source is informal or you're very confident without much detail.</p>
+                        </div>
+
+                        <div class="rubric-section">
+                            <div class="rubric-item">
+                                <h4>Specificity</h4>
+                                <div class="rubric-score">
+                                    <div class="score-badge ${analysis.scores.specificity.label.toLowerCase()}">
+                                        ${analysis.scores.specificity.score}/4
+                                    </div>
+                                    <span class="score-label">${analysis.scores.specificity.label}</span>
+                                </div>
+                                <p class="rubric-feedback">${analysis.scores.specificity.feedback}</p>
+                            </div>
+
+                            <div class="rubric-item">
+                                <h4>Depth</h4>
+                                <div class="rubric-score">
+                                    <div class="score-badge ${analysis.scores.depth.label.toLowerCase()}">
+                                        ${analysis.scores.depth.score}/4
+                                    </div>
+                                    <span class="score-label">${analysis.scores.depth.label}</span>
+                                </div>
+                                <p class="rubric-feedback">${analysis.scores.depth.feedback}</p>
+                            </div>
+
+                            <div class="rubric-item">
+                                <h4>Question Quality</h4>
+                                <div class="rubric-score">
+                                    <div class="score-badge ${analysis.scores.questionQuality.label.toLowerCase()}">
+                                        ${analysis.scores.questionQuality.score}/4
+                                    </div>
+                                    <span class="score-label">${analysis.scores.questionQuality.label}</span>
+                                </div>
+                                <p class="rubric-feedback">${analysis.scores.questionQuality.feedback}</p>
+                            </div>
+
+                            <div class="rubric-item">
+                                <h4>Success Criteria</h4>
+                                <div class="rubric-score">
+                                    <div class="score-badge ${analysis.scores.goalClarity.label.toLowerCase()}">
+                                        ${analysis.scores.goalClarity.score}/4
+                                    </div>
+                                    <span class="score-label">${analysis.scores.goalClarity.label}</span>
+                                </div>
+                                <p class="rubric-feedback">${analysis.scores.goalClarity.feedback}</p>
+                            </div>
+
+                            <div class="rubric-item">
+                                <h4>Self-Awareness</h4>
+                                <div class="rubric-score">
+                                    <div class="score-badge ${analysis.scores.selfAwareness.label.toLowerCase()}">
+                                        ${analysis.scores.selfAwareness.score}/4
+                                    </div>
+                                    <span class="score-label">${analysis.scores.selfAwareness.label}</span>
+                                </div>
+                                <p class="rubric-feedback">${analysis.scores.selfAwareness.feedback}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">⚖️</span>
+                            <h2 class="card-title">Impact Analysis</h2>
+                        </div>
+
+                        <h3 style="font-family: 'Fraunces', serif; margin-bottom: 1rem;">Your Topic: <em>${analysis.topic}</em></h3>
+
+                        <div class="comparison-section">
+                            <div class="comparison-card without">
+                                <h4>❌ WITHOUT Pre-AI Grounding</h4>
+                                <p style="font-weight: 600; margin-bottom: 0.75rem;">Likely AI Prompt:</p>
+                                <div class="prompt-box">"${analysis.basicPrompt}"</div>
+                                
+                                <p style="font-weight: 600; margin-bottom: 0.5rem;">Typical Result:</p>
+                                <ul class="outcome-list">
+                                    <li>Generic overview you could find anywhere</li>
+                                    <li>Information you may already know</li>
+                                    <li>Misses your specific knowledge gaps</li>
+                                    <li>Doesn't connect to your learning goals</li>
+                                    <li>No way to check if info matches what you thought you knew</li>
+                                    <li>Passive information dump</li>
+                                </ul>
+                                <p style="margin-top: 1rem; font-weight: 600; color: #991b1b;">Learning Outcome: Surface-level, copy-paste behavior</p>
+                            </div>
+
+                            <div class="comparison-card with">
+                                <h4>✅ WITH Pre-AI Grounding</h4>
+                                <p style="font-weight: 600; margin-bottom: 0.75rem;">Your Enhanced AI Prompt:</p>
+                                <div class="prompt-box">"${analysis.enhancedPrompt}"</div>
+                                
+                                <p style="font-weight: 600; margin-bottom: 0.5rem;">Typical Result:</p>
+                                <ul class="outcome-list">
+                                    <li>Addresses YOUR specific gap</li>
+                                    <li>Builds on what you already know</li>
+                                    <li>Targets your confusion point</li>
+                                    <li>Connects to your goal</li>
+                                    <li>You can verify against your source and confidence level</li>
+                                    <li>Invites deeper dialogue</li>
+                                </ul>
+                                <p style="margin-top: 1rem; font-weight: 600; color: #15803d;">Learning Outcome: Targeted understanding, critical evaluation</p>
+                            </div>
+                        </div>
+
+                        <div class="prompt-tips">
+                            <h4>💡 Using Your Grounding to Create AI Prompts</h4>
+                            <div class="tip-item">
+                                <strong>Start with your knowledge base:</strong>
+                                "I understand that [your K], but..."
+                            </div>
+                            <div class="tip-item">
+                                <strong>Name your specific confusion:</strong>
+                                "I'm confused about [your W question] because..."
+                            </div>
+                            <div class="tip-item">
+                                <strong>State your success criteria:</strong>
+                                "I need to be able to [your L criteria], so explain in a way that helps me..."
+                            </div>
+                            <div class="tip-item">
+                                <strong>Share your confidence and source:</strong>
+                                "I learned this from [your source] and I'm ${confidenceLabels[analysis.confidence].toLowerCase()}, so please verify..."
+                            </div>
+                            <div class="tip-item">
+                                <strong>Build in verification:</strong>
+                                "After you explain, help me check if I understand by [your L verification method]..."
+                            </div>
+                            <div class="tip-item">
+                                <strong>Request specific formats:</strong>
+                                "Can you explain using examples/analogies/diagrams that..."
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="generatePDF()">
+                            📄 Download PDF Report
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const topic = document.getElementById('topic').value;
+            const know = document.getElementById('know').value;
+            const wonder = document.getElementById('wonder').value;
+            const learn = document.getElementById('learn').value;
+            const confidence = document.querySelector('input[name="confidence"]:checked').value;
+            const source = document.getElementById('source').value;
+            
+            const confidenceLabels = {
+                '1': 'Guessing',
+                '2': 'Somewhat sure',
+                '3': 'Pretty confident',
+                '4': 'Very confident',
+                '5': 'Certain'
+            };
+            
+            const analysis = evaluateGrounding(topic, know, wonder, learn, parseInt(confidence), source);
+
+            // Header
+            doc.setFillColor(10, 77, 60);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont(undefined, 'bold');
+            doc.text('Pre-AI Grounding Report', 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Topic: ${topic}`, 105, 30, { align: 'center' });
+
+            // Reset colors
+            doc.setTextColor(0, 0, 0);
+            let y = 50;
+
+            // Confidence and Source
+            doc.setFillColor(250, 250, 249);
+            doc.rect(15, y, 180, 20, 'F');
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Confidence Level: ${confidence}/5 - ${confidenceLabels[confidence]}`, 20, y + 8);
+            doc.text(`Knowledge Source: ${source}`, 20, y + 15);
+            y += 28;
+
+            // K-W-L Sections
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('KNOW - What I Know:', 15, y);
+            y += 7;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const knowLines = doc.splitTextToSize(know, 180);
+            doc.text(knowLines, 15, y);
+            y += knowLines.length * 5 + 10;
+
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('WONDER - What I Wonder:', 15, y);
+            y += 7;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const wonderLines = doc.splitTextToSize(wonder, 180);
+            doc.text(wonderLines, 15, y);
+            y += wonderLines.length * 5 + 10;
+
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('LEARN - What I Want to Learn:', 15, y);
+            y += 7;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const learnLines = doc.splitTextToSize(learn, 180);
+            doc.text(learnLines, 15, y);
+            y += learnLines.length * 5 + 15;
+
+            // New page for rubric
+            doc.addPage();
+            y = 20;
+
+            // Rubric Header
+            doc.setFillColor(245, 158, 11);
+            doc.rect(15, y, 180, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('GROUNDING QUALITY RUBRIC', 105, y + 7, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            y += 15;
+
+            // Rubric scores
+            const rubricItems = [
+                ['Specificity', analysis.scores.specificity],
+                ['Depth', analysis.scores.depth],
+                ['Question Quality', analysis.scores.questionQuality],
+                ['Success Criteria', analysis.scores.goalClarity],
+                ['Self-Awareness', analysis.scores.selfAwareness]
+            ];
+
+            rubricItems.forEach(([name, score]) => {
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text(`${name}: ${score.score}/4 - ${score.label}`, 15, y);
+                y += 6;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                const feedbackLines = doc.splitTextToSize(score.feedback, 180);
+                doc.text(feedbackLines, 15, y);
+                y += feedbackLines.length * 5 + 8;
+
+                if (y > 250) {
+                    doc.addPage();
+                    y = 20;
+                }
+            });
+
+            // Prompt comparison
+            doc.addPage();
+            y = 20;
+
+            doc.setFillColor(220, 38, 38);
+            doc.rect(15, y, 180, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('WITHOUT Pre-AI Grounding', 105, y + 7, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            y += 15;
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Prompt: "${analysis.basicPrompt}"`, 15, y);
+            y += 8;
+            doc.text('Result: Generic overview, misses your specific gaps, passive learning', 15, y);
+            y += 15;
+
+            doc.setFillColor(22, 163, 74);
+            doc.rect(15, y, 180, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('WITH Pre-AI Grounding', 105, y + 7, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            y += 15;
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const enhancedLines = doc.splitTextToSize(`Prompt: "${analysis.enhancedPrompt}"`, 180);
+            doc.text(enhancedLines, 15, y);
+            y += enhancedLines.length * 5 + 8;
+            doc.text('Result: Targeted to YOUR gaps, builds on your knowledge, meaningful learning', 15, y);
+
+            // Save
+            doc.save(`Pre-AI-Grounding_${topic.replace(/\s+/g, '_')}.pdf`);
+        }
+    </script>
+</body>
+</html>
