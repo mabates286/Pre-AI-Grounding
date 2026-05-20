@@ -28,6 +28,35 @@
             box-sizing: border-box;
         }
 
+        /* Skip link for keyboard navigation */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            z-index: 100;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Screen reader only text */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
         body {
             font-family: 'DM Sans', sans-serif;
             background: var(--bg);
@@ -143,6 +172,23 @@
             margin-bottom: 0;
         }
 
+        fieldset {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        legend {
+            display: block;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 0;
+        }
+
         label {
             display: block;
             font-weight: 700;
@@ -173,11 +219,19 @@
         }
 
         input[type="text"]:focus,
-        textarea:focus {
+        select:focus,
+        textarea:focus,
+        button:focus {
             outline: none;
             border-color: var(--primary);
             background: var(--surface);
             box-shadow: 0 0 0 4px rgba(10, 77, 60, 0.1);
+        }
+
+        /* High contrast focus for keyboard navigation */
+        *:focus-visible {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
         }
 
         textarea {
@@ -517,91 +571,126 @@
     </style>
 </head>
 <body>
-    <div class="hero">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <header role="banner" class="hero">
         <div class="hero-content">
-            <div class="hero-icon">🧠</div>
+            <div class="hero-icon" aria-hidden="true">🧠</div>
             <h1>Pre-AI Grounding Tool</h1>
             <p class="hero-subtitle">Build context, think metacognitively, and prepare for meaningful AI interaction</p>
         </div>
-    </div>
+    </header>
 
     <div class="container">
-        <div class="sidebar">
+        <aside aria-label="Grounding form" class="sidebar">
             <div class="card">
                 <div class="card-header">
-                    <span class="card-icon">📝</span>
+                    <span class="card-icon" aria-hidden="true">📝</span>
                     <h2 class="card-title">Your Grounding</h2>
                 </div>
 
-                <div class="section">
-                    <label for="topic">What topic are you about to explore?</label>
-                    <p class="helper-text">Be specific - this helps frame your learning context</p>
-                    <input type="text" id="topic" placeholder="e.g., Photosynthesis, The Water Cycle, Fractions">
-                </div>
-
-                <div class="section">
-                    <label for="know">K - What do you KNOW?</label>
-                    <p class="helper-text">Your existing knowledge, experiences, connections</p>
-                    <textarea id="know" placeholder="List what you already understand about this topic. Be specific - include facts, concepts, or experiences you already have."></textarea>
-                    <div class="char-count"><span id="know-count">0</span> characters</div>
-                </div>
-
-                <div class="section">
-                    <label for="confidence">How confident are you in what you know?</label>
-                    <p class="helper-text">Rate your certainty about the knowledge above</p>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
-                            <input type="radio" name="confidence" value="1" style="margin: 0;">
-                            <span>1 - Guessing</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
-                            <input type="radio" name="confidence" value="2" style="margin: 0;">
-                            <span>2 - Somewhat sure</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
-                            <input type="radio" name="confidence" value="3" style="margin: 0;">
-                            <span>3 - Pretty confident</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
-                            <input type="radio" name="confidence" value="4" style="margin: 0;">
-                            <span>4 - Very confident</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
-                            <input type="radio" name="confidence" value="5" style="margin: 0;">
-                            <span>5 - Certain</span>
-                        </label>
+                <form id="groundingForm" aria-label="Pre-AI Grounding Form">
+                    <div class="section">
+                        <label for="topic">What topic are you about to explore?</label>
+                        <p class="helper-text" id="topic-help">Be specific - this helps frame your learning context</p>
+                        <input 
+                            type="text" 
+                            id="topic" 
+                            aria-describedby="topic-help"
+                            placeholder="e.g., Photosynthesis, The Water Cycle, Fractions"
+                            required>
                     </div>
-                </div>
 
-                <div class="section">
-                    <label for="source">Where did you learn this?</label>
-                    <p class="helper-text">Source of your knowledge (helps you evaluate reliability)</p>
-                    <input type="text" id="source" placeholder="e.g., class notes, textbook chapter 5, a video I watched, my own experience">
-                </div>
+                    <div class="section">
+                        <label for="know">K - What do you KNOW?</label>
+                        <p class="helper-text" id="know-help">Your existing knowledge, experiences, connections</p>
+                        <textarea 
+                            id="know" 
+                            aria-describedby="know-help know-count"
+                            placeholder="List what you already understand about this topic. Be specific - include facts, concepts, or experiences you already have."
+                            required></textarea>
+                        <div class="char-count" id="know-count" aria-live="polite" aria-atomic="true">
+                            <span id="know-count-value">0</span> characters
+                        </div>
+                    </div>
 
-                <div class="section">
-                    <label for="wonder">W - What do you WONDER?</label>
-                    <p class="helper-text">Your genuine questions, confusions, curiosities</p>
-                    <textarea id="wonder" placeholder="What questions do you have? What are you confused about? What do you want to know more about?"></textarea>
-                    <div class="char-count"><span id="wonder-count">0</span> characters</div>
-                </div>
+                    <fieldset class="section">
+                        <legend>How confident are you in what you know?</legend>
+                        <p class="helper-text" id="confidence-help">Rate your certainty about the knowledge above</p>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" role="radiogroup" aria-describedby="confidence-help" aria-required="true">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                                <input type="radio" name="confidence" value="1" required aria-label="Confidence level 1 - Guessing">
+                                <span>1 - Guessing</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                                <input type="radio" name="confidence" value="2" aria-label="Confidence level 2 - Somewhat sure">
+                                <span>2 - Somewhat sure</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                                <input type="radio" name="confidence" value="3" aria-label="Confidence level 3 - Pretty confident">
+                                <span>3 - Pretty confident</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                                <input type="radio" name="confidence" value="4" aria-label="Confidence level 4 - Very confident">
+                                <span>4 - Very confident</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; text-transform: none; font-weight: 500; cursor: pointer;">
+                                <input type="radio" name="confidence" value="5" aria-label="Confidence level 5 - Certain">
+                                <span>5 - Certain</span>
+                            </label>
+                        </div>
+                    </fieldset>
 
-                <div class="section">
-                    <label for="learn">L - LEARNING Success Criteria</label>
-                    <p class="helper-text">How will you know you've actually learned this? What will you look for in AI responses to verify they're accurate and complete?</p>
-                    <textarea id="learn" placeholder="I'll know I've learned this when I can... I'll verify AI responses by checking if... I should be able to... If the AI contradicts [my source], I'll..."></textarea>
-                    <div class="char-count"><span id="learn-count">0</span> characters</div>
-                </div>
+                    <div class="section">
+                        <label for="source">Where did you learn this?</label>
+                        <p class="helper-text" id="source-help">Source of your knowledge (helps you evaluate reliability)</p>
+                        <input 
+                            type="text" 
+                            id="source" 
+                            aria-describedby="source-help"
+                            placeholder="e.g., class notes, textbook chapter 5, a video I watched, my own experience"
+                            required>
+                    </div>
 
-                <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeGrounding()">
-                    🎯 Analyze My Grounding
-                </button>
+                    <div class="section">
+                        <label for="wonder">W - What do you WONDER?</label>
+                        <p class="helper-text" id="wonder-help">Your genuine questions, confusions, curiosities</p>
+                        <textarea 
+                            id="wonder" 
+                            aria-describedby="wonder-help wonder-count"
+                            placeholder="What questions do you have? What are you confused about? What do you want to know more about?"
+                            required></textarea>
+                        <div class="char-count" id="wonder-count" aria-live="polite" aria-atomic="true">
+                            <span id="wonder-count-value">0</span> characters
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <label for="learn">L - LEARNING Success Criteria</label>
+                        <p class="helper-text" id="learn-help">How will you know you've actually learned this? What will you look for in AI responses to verify they're accurate and complete?</p>
+                        <textarea 
+                            id="learn" 
+                            aria-describedby="learn-help learn-count"
+                            placeholder="I'll know I've learned this when I can... I'll verify AI responses by checking if... I should be able to... If the AI contradicts [my source], I'll..."
+                            required></textarea>
+                        <div class="char-count" id="learn-count" aria-live="polite" aria-atomic="true">
+                            <span id="learn-count-value">0</span> characters
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit"
+                        class="btn btn-primary" 
+                        id="analyzeBtn">
+                        🎯 Analyze My Grounding
+                    </button>
+                </form>
             </div>
-        </div>
+        </aside>
 
-        <div class="main-content">
-            <div class="info-box">
-                <h3>💡 Why Pre-AI Grounding Matters</h3>
+        <main id="main-content" class="main-content" role="main">
+            <div class="info-box" role="region" aria-labelledby="info-heading">
+                <h3 id="info-heading">💡 Why Pre-AI Grounding Matters</h3>
                 <p>Before you interact with AI, it's crucial to establish YOUR context, thinking, and evaluation criteria. This helps you:</p>
                 <ul>
                     <li><strong>Evaluate AI outputs critically</strong> - You'll know what to check and verify</li>
@@ -612,23 +701,52 @@
                 </ul>
             </div>
 
-            <div id="resultsContainer">
-                <div class="empty-state">
-                    <div class="empty-state-icon">📋</div>
+            <div id="resultsContainer" role="region" aria-live="polite" aria-atomic="false">
+                <div class="empty-state" role="status" aria-live="polite">
+                    <div class="empty-state-icon" aria-hidden="true">📋</div>
                     <h3>Complete your grounding on the left to see your analysis</h3>
-                    <p>Fill out all three sections (K-W-L) and click "Analyze My Grounding"</p>
+                    <p>Fill out all sections (K-W-L, confidence rating, and source) and click "Analyze My Grounding"</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Character counters
+        // Character counters with accessible updates
         ['know', 'wonder', 'learn'].forEach(field => {
-            document.getElementById(field).addEventListener('input', function() {
-                document.getElementById(field + '-count').textContent = this.value.length;
+            const textarea = document.getElementById(field);
+            const counter = document.getElementById(field + '-count-value');
+            
+            textarea.addEventListener('input', function() {
+                const count = this.value.length;
+                counter.textContent = count;
+                
+                // Update ARIA label for context
+                textarea.setAttribute('aria-label', 
+                    `${field === 'know' ? 'What you know' : field === 'wonder' ? 'What you wonder' : 'Learning success criteria'}, ${count} characters entered`
+                );
             });
         });
+
+        // Form submission handler
+        const form = document.getElementById('groundingForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            analyzeGrounding();
+        });
+
+        function announceToScreenReader(message) {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.className = 'sr-only';
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
 
         function analyzeGrounding() {
             const topic = document.getElementById('topic').value.trim();
@@ -638,14 +756,62 @@
             const confidence = document.querySelector('input[name="confidence"]:checked');
             const source = document.getElementById('source').value.trim();
 
+            // Accessible error handling
             if (!topic || !know || !wonder || !learn || !confidence || !source) {
-                alert('Please complete all sections (including confidence rating and source) before analyzing your grounding.');
+                const missingFields = [];
+                if (!topic) missingFields.push('topic');
+                if (!know) missingFields.push('what you know');
+                if (!wonder) missingFields.push('what you wonder');
+                if (!learn) missingFields.push('learning success criteria');
+                if (!confidence) missingFields.push('confidence rating');
+                if (!source) missingFields.push('knowledge source');
+                
+                const errorMessage = `Please complete the following required fields: ${missingFields.join(', ')}`;
+                alert(errorMessage);
+                announceToScreenReader(errorMessage);
+                
+                // Focus first missing field
+                if (!topic) document.getElementById('topic').focus();
+                else if (!know) document.getElementById('know').focus();
+                else if (!wonder) document.getElementById('wonder').focus();
+                else if (!learn) document.getElementById('learn').focus();
+                else if (!confidence) document.querySelector('input[name="confidence"]').focus();
+                else if (!source) document.getElementById('source').focus();
+                
                 return;
             }
 
             const confidenceValue = parseInt(confidence.value);
-            const analysis = evaluateGrounding(topic, know, wonder, learn, confidenceValue, source);
-            displayResults(analysis);
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            // Disable button and announce loading
+            analyzeBtn.disabled = true;
+            analyzeBtn.setAttribute('aria-busy', 'true');
+            analyzeBtn.textContent = '⏳ Analyzing...';
+            announceToScreenReader('Analyzing your grounding. Please wait.');
+            
+            // Simulate analysis
+            setTimeout(() => {
+                const analysis = evaluateGrounding(topic, know, wonder, learn, confidenceValue, source);
+                displayResults(analysis);
+                
+                // Re-enable button
+                analyzeBtn.disabled = false;
+                analyzeBtn.setAttribute('aria-busy', 'false');
+                analyzeBtn.textContent = '🎯 Analyze My Grounding';
+                
+                // Announce completion and move focus
+                announceToScreenReader('Analysis complete. Results are now displayed. Press Tab to navigate to your results.');
+                
+                // Focus the results heading
+                setTimeout(() => {
+                    const resultsHeading = document.getElementById('results-heading');
+                    if (resultsHeading) {
+                        resultsHeading.focus();
+                        resultsHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100);
+            }, 500);
         }
 
         function evaluateGrounding(topic, know, wonder, learn, confidence, source) {
@@ -903,122 +1069,129 @@
             
             const html = `
                 <div class="results-section">
-                    <div class="card">
+                    <article class="card">
                         <div class="card-header">
-                            <span class="card-icon">📊</span>
-                            <h2 class="card-title">Your Grounding Analysis</h2>
+                            <span class="card-icon" aria-hidden="true">📊</span>
+                            <h2 class="card-title" id="results-heading" tabindex="-1">Your Grounding Analysis</h2>
                         </div>
 
-                        <div style="background: var(--bg); padding: 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; border: 2px solid var(--border);">
+                        <div style="background: var(--bg); padding: 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; border: 2px solid var(--border);" role="region" aria-labelledby="context-heading">
+                            <h3 id="context-heading" class="sr-only">Your Context Summary</h3>
                             <p style="margin-bottom: 0.5rem;"><strong>Confidence Level:</strong> ${analysis.confidence}/5 - ${confidenceLabels[analysis.confidence]}</p>
                             <p style="margin-bottom: 0.5rem;"><strong>Knowledge Source:</strong> ${analysis.source}</p>
                             <p style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; margin-top: 0.75rem;">💡 Remember: High confidence doesn't always mean accurate knowledge. Use AI interaction to verify and deepen understanding, especially when your source is informal or you're very confident without much detail.</p>
                         </div>
 
-                        <div class="rubric-section">
-                            <div class="rubric-item">
-                                <h4>Specificity</h4>
-                                <div class="rubric-score">
-                                    <div class="score-badge ${analysis.scores.specificity.label.toLowerCase()}">
-                                        ${analysis.scores.specificity.score}/4
+                        <section aria-labelledby="rubric-heading">
+                            <h3 id="rubric-heading" class="sr-only">Grounding Quality Scores</h3>
+                            <div class="rubric-section">
+                                <div class="rubric-item" role="region" aria-labelledby="spec-heading">
+                                    <h4 id="spec-heading">Specificity</h4>
+                                    <div class="rubric-score">
+                                        <div class="score-badge ${analysis.scores.specificity.label.toLowerCase()}" role="img" aria-label="Score: ${analysis.scores.specificity.score} out of 4">
+                                            ${analysis.scores.specificity.score}/4
+                                        </div>
+                                        <span class="score-label">${analysis.scores.specificity.label}</span>
                                     </div>
-                                    <span class="score-label">${analysis.scores.specificity.label}</span>
+                                    <p class="rubric-feedback">${analysis.scores.specificity.feedback}</p>
                                 </div>
-                                <p class="rubric-feedback">${analysis.scores.specificity.feedback}</p>
-                            </div>
 
-                            <div class="rubric-item">
-                                <h4>Depth</h4>
-                                <div class="rubric-score">
-                                    <div class="score-badge ${analysis.scores.depth.label.toLowerCase()}">
-                                        ${analysis.scores.depth.score}/4
+                                <div class="rubric-item" role="region" aria-labelledby="depth-heading">
+                                    <h4 id="depth-heading">Depth</h4>
+                                    <div class="rubric-score">
+                                        <div class="score-badge ${analysis.scores.depth.label.toLowerCase()}" role="img" aria-label="Score: ${analysis.scores.depth.score} out of 4">
+                                            ${analysis.scores.depth.score}/4
+                                        </div>
+                                        <span class="score-label">${analysis.scores.depth.label}</span>
                                     </div>
-                                    <span class="score-label">${analysis.scores.depth.label}</span>
+                                    <p class="rubric-feedback">${analysis.scores.depth.feedback}</p>
                                 </div>
-                                <p class="rubric-feedback">${analysis.scores.depth.feedback}</p>
-                            </div>
 
-                            <div class="rubric-item">
-                                <h4>Question Quality</h4>
-                                <div class="rubric-score">
-                                    <div class="score-badge ${analysis.scores.questionQuality.label.toLowerCase()}">
-                                        ${analysis.scores.questionQuality.score}/4
+                                <div class="rubric-item" role="region" aria-labelledby="question-heading">
+                                    <h4 id="question-heading">Question Quality</h4>
+                                    <div class="rubric-score">
+                                        <div class="score-badge ${analysis.scores.questionQuality.label.toLowerCase()}" role="img" aria-label="Score: ${analysis.scores.questionQuality.score} out of 4">
+                                            ${analysis.scores.questionQuality.score}/4
+                                        </div>
+                                        <span class="score-label">${analysis.scores.questionQuality.label}</span>
                                     </div>
-                                    <span class="score-label">${analysis.scores.questionQuality.label}</span>
+                                    <p class="rubric-feedback">${analysis.scores.questionQuality.feedback}</p>
                                 </div>
-                                <p class="rubric-feedback">${analysis.scores.questionQuality.feedback}</p>
-                            </div>
 
-                            <div class="rubric-item">
-                                <h4>Success Criteria</h4>
-                                <div class="rubric-score">
-                                    <div class="score-badge ${analysis.scores.goalClarity.label.toLowerCase()}">
-                                        ${analysis.scores.goalClarity.score}/4
+                                <div class="rubric-item" role="region" aria-labelledby="criteria-heading">
+                                    <h4 id="criteria-heading">Success Criteria</h4>
+                                    <div class="rubric-score">
+                                        <div class="score-badge ${analysis.scores.goalClarity.label.toLowerCase()}" role="img" aria-label="Score: ${analysis.scores.goalClarity.score} out of 4">
+                                            ${analysis.scores.goalClarity.score}/4
+                                        </div>
+                                        <span class="score-label">${analysis.scores.goalClarity.label}</span>
                                     </div>
-                                    <span class="score-label">${analysis.scores.goalClarity.label}</span>
+                                    <p class="rubric-feedback">${analysis.scores.goalClarity.feedback}</p>
                                 </div>
-                                <p class="rubric-feedback">${analysis.scores.goalClarity.feedback}</p>
-                            </div>
 
-                            <div class="rubric-item">
-                                <h4>Self-Awareness</h4>
-                                <div class="rubric-score">
-                                    <div class="score-badge ${analysis.scores.selfAwareness.label.toLowerCase()}">
-                                        ${analysis.scores.selfAwareness.score}/4
+                                <div class="rubric-item" role="region" aria-labelledby="awareness-heading">
+                                    <h4 id="awareness-heading">Self-Awareness</h4>
+                                    <div class="rubric-score">
+                                        <div class="score-badge ${analysis.scores.selfAwareness.label.toLowerCase()}" role="img" aria-label="Score: ${analysis.scores.selfAwareness.score} out of 4">
+                                            ${analysis.scores.selfAwareness.score}/4
+                                        </div>
+                                        <span class="score-label">${analysis.scores.selfAwareness.label}</span>
                                     </div>
-                                    <span class="score-label">${analysis.scores.selfAwareness.label}</span>
+                                    <p class="rubric-feedback">${analysis.scores.selfAwareness.feedback}</p>
                                 </div>
-                                <p class="rubric-feedback">${analysis.scores.selfAwareness.feedback}</p>
                             </div>
-                        </div>
-                    </div>
+                        </section>
+                    </article>
 
-                    <div class="card">
+                    <article class="card">
                         <div class="card-header">
-                            <span class="card-icon">⚖️</span>
+                            <span class="card-icon" aria-hidden="true">⚖️</span>
                             <h2 class="card-title">Impact Analysis</h2>
                         </div>
 
                         <h3 style="font-family: 'Fraunces', serif; margin-bottom: 1rem;">Your Topic: <em>${analysis.topic}</em></h3>
 
-                        <div class="comparison-section">
-                            <div class="comparison-card without">
-                                <h4>❌ WITHOUT Pre-AI Grounding</h4>
-                                <p style="font-weight: 600; margin-bottom: 0.75rem;">Likely AI Prompt:</p>
-                                <div class="prompt-box">"${analysis.basicPrompt}"</div>
-                                
-                                <p style="font-weight: 600; margin-bottom: 0.5rem;">Typical Result:</p>
-                                <ul class="outcome-list">
-                                    <li>Generic overview you could find anywhere</li>
-                                    <li>Information you may already know</li>
-                                    <li>Misses your specific knowledge gaps</li>
-                                    <li>Doesn't connect to your learning goals</li>
-                                    <li>No way to check if info matches what you thought you knew</li>
-                                    <li>Passive information dump</li>
-                                </ul>
-                                <p style="margin-top: 1rem; font-weight: 600; color: #991b1b;">Learning Outcome: Surface-level, copy-paste behavior</p>
-                            </div>
+                        <section aria-labelledby="comparison-heading">
+                            <h3 id="comparison-heading" class="sr-only">Comparison: With and Without Pre-AI Grounding</h3>
+                            <div class="comparison-section">
+                                <div class="comparison-card without" role="region" aria-labelledby="without-heading">
+                                    <h4 id="without-heading">❌ WITHOUT Pre-AI Grounding</h4>
+                                    <p style="font-weight: 600; margin-bottom: 0.75rem;">Likely AI Prompt:</p>
+                                    <div class="prompt-box">"${analysis.basicPrompt}"</div>
+                                    
+                                    <p style="font-weight: 600; margin-bottom: 0.5rem;">Typical Result:</p>
+                                    <ul class="outcome-list">
+                                        <li>Generic overview you could find anywhere</li>
+                                        <li>Information you may already know</li>
+                                        <li>Misses your specific knowledge gaps</li>
+                                        <li>Doesn't connect to your learning goals</li>
+                                        <li>No way to check if info matches what you thought you knew</li>
+                                        <li>Passive information dump</li>
+                                    </ul>
+                                    <p style="margin-top: 1rem; font-weight: 600; color: #991b1b;">Learning Outcome: Surface-level, copy-paste behavior</p>
+                                </div>
 
-                            <div class="comparison-card with">
-                                <h4>✅ WITH Pre-AI Grounding</h4>
-                                <p style="font-weight: 600; margin-bottom: 0.75rem;">Your Enhanced AI Prompt:</p>
-                                <div class="prompt-box">"${analysis.enhancedPrompt}"</div>
-                                
-                                <p style="font-weight: 600; margin-bottom: 0.5rem;">Typical Result:</p>
-                                <ul class="outcome-list">
-                                    <li>Addresses YOUR specific gap</li>
-                                    <li>Builds on what you already know</li>
-                                    <li>Targets your confusion point</li>
-                                    <li>Connects to your goal</li>
-                                    <li>You can verify against your source and confidence level</li>
-                                    <li>Invites deeper dialogue</li>
-                                </ul>
-                                <p style="margin-top: 1rem; font-weight: 600; color: #15803d;">Learning Outcome: Targeted understanding, critical evaluation</p>
+                                <div class="comparison-card with" role="region" aria-labelledby="with-heading">
+                                    <h4 id="with-heading">✅ WITH Pre-AI Grounding</h4>
+                                    <p style="font-weight: 600; margin-bottom: 0.75rem;">Your Enhanced AI Prompt:</p>
+                                    <div class="prompt-box">"${analysis.enhancedPrompt}"</div>
+                                    
+                                    <p style="font-weight: 600; margin-bottom: 0.5rem;">Typical Result:</p>
+                                    <ul class="outcome-list">
+                                        <li>Addresses YOUR specific gap</li>
+                                        <li>Builds on what you already know</li>
+                                        <li>Targets your confusion point</li>
+                                        <li>Connects to your goal</li>
+                                        <li>You can verify against your source and confidence level</li>
+                                        <li>Invites deeper dialogue</li>
+                                    </ul>
+                                    <p style="margin-top: 1rem; font-weight: 600; color: #15803d;">Learning Outcome: Targeted understanding, critical evaluation</p>
+                                </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <div class="prompt-tips">
-                            <h4>💡 Using Your Grounding to Create AI Prompts</h4>
+                        <section class="prompt-tips" role="region" aria-labelledby="tips-heading">
+                            <h4 id="tips-heading">💡 Using Your Grounding to Create AI Prompts</h4>
                             <div class="tip-item">
                                 <strong>Start with your knowledge base:</strong>
                                 "I understand that [your K], but..."
@@ -1043,17 +1216,16 @@
                                 <strong>Request specific formats:</strong>
                                 "Can you explain using examples/analogies/diagrams that..."
                             </div>
-                        </div>
+                        </section>
 
-                        <button class="btn btn-secondary" onclick="generatePDF()">
+                        <button class="btn btn-secondary" onclick="generatePDF()" aria-label="Download your grounding analysis as a PDF report">
                             📄 Download PDF Report
                         </button>
-                    </div>
+                    </article>
                 </div>
             `;
 
             container.innerHTML = html;
-            container.scrollIntoView({ behavior: 'smooth' });
         }
 
         function generatePDF() {
